@@ -28,6 +28,11 @@ public class UserController {
     public User create(@RequestBody User user) {
         return userService.save(user);
     }
+    
+    @PatchMapping("/{id}/status")
+    public User updateStatus(@PathVariable Long id, @RequestBody Boolean isActive) {
+        return userService.updateStatus(id, isActive);
+    }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {

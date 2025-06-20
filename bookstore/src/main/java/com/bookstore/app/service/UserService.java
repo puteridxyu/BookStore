@@ -28,4 +28,26 @@ public class UserService {
     public void delete(Long id) {
         userRepository.deleteById(id);
     }
+    
+    public User register(User user) {
+        if (userRepository.existsByUsername(user.getUsername())) {
+            throw new RuntimeException("Username already exists");
+        }
+        return userRepository.save(user);
+    }
+    
+    public User updateStatus(Long id, Boolean isActive) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIsActive(isActive);
+        return userRepository.save(user);
+    }
+    
+    public User login(String username, String password) {
+        User user = userRepository.findByUsername(username);
+        if (user == null || !user.getPassword().equals(password)) {
+            throw new RuntimeException("Invalid credentials");
+        }
+        return user;
+    }
 }

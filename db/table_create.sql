@@ -11,7 +11,7 @@ CREATE TABLE customer (
     customer_id     BIGSERIAL PRIMARY KEY,
     first_name      VARCHAR(100) NOT NULL,
     last_name       VARCHAR(100) NOT NULL,
-    email_office    VARCHAR(150) NOT NULL,
+    email_office    VARCHAR(150),
     email_personal  VARCHAR(150),
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -20,8 +20,9 @@ CREATE TABLE customer (
 CREATE TABLE "user" (
     user_id         BIGSERIAL PRIMARY KEY,
     username        VARCHAR(100) UNIQUE NOT NULL,
-    password_hash   VARCHAR(255) NOT NULL,
+    password   VARCHAR(255) NOT NULL,
     email           VARCHAR(150),
+	is_active       BOOLEAN NOT NULL DEFAULT TRUE,
     role            VARCHAR(20) NOT NULL DEFAULT 'CUSTOMER' CHECK (role IN ('ADMIN', 'STAFF', 'CUSTOMER')),
     customer_id     BIGINT REFERENCES customer(customer_id) ON DELETE SET NULL
 );
@@ -40,7 +41,7 @@ CREATE TABLE product (
     product_id      BIGSERIAL PRIMARY KEY,
     book_title      VARCHAR(200) NOT NULL,
     book_price      DECIMAL(10, 2) NOT NULL,
-    book_quantity   INTEGER NOT NULL,
+    book_quantity   INTEGER,
     book_category   VARCHAR(50) NOT NULL,
     book_desc       TEXT,
     book_img        TEXT,

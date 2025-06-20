@@ -26,6 +26,7 @@ public class LogEntry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long logId;
 
+    @Builder.Default
     @Column
     private LocalDateTime timestamp = LocalDateTime.now();
 

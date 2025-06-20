@@ -40,6 +40,7 @@ public class Customer {
     @Column(length = 150)
     private String emailPersonal;
 
+    @Builder.Default
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 

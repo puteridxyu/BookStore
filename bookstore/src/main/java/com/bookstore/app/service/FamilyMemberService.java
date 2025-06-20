@@ -28,4 +28,8 @@ public class FamilyMemberService {
     public void delete(Long id) {
         familyMemberRepository.deleteById(id);
     }
+    
+    public List<FamilyMember> getByCustomerId(Long customerId) {
+        return familyMemberRepository.findByCustomerCustomerId(customerId);
+    }
 }

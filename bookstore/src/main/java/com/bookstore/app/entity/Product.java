@@ -6,6 +6,8 @@ import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,9 +40,33 @@ public class Product {
     @Column(nullable = false)
     private Integer bookQuantity;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private BookCategory bookCategory;
+
+    @Builder.Default
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "product", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     private List<ProductAudit> audits;
+
+    public enum BookCategory {
+        ENGLISH,
+        LITERATURE,
+        STUDENT_REFERENCE,
+        SCIENCE,
+        TECHNOLOGY,
+        CHILDREN,
+        RELIGION,
+        COMICS,
+        HISTORY,
+        BUSINESS,
+        SELF_HELP,
+        COOKING,
+        HEALTH_WELLNESS,
+        TRAVEL,
+        MOTIVATION,
+        ART_DESIGN
+    }
 }

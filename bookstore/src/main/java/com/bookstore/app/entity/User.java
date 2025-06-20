@@ -26,13 +26,19 @@ public class User {
 
     @Column(nullable = false, length = 100)
     private String username;
-
-    @Column(nullable = false, length = 255)
-    private String passwordHash;
+    
+    @Column(name = "password", nullable = false, length = 255)
+    private String password;
 
     @Column(length = 150)
     private String email;
 
-    @Column(length = 50)
-    private String role = "STAFF";
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean isActive = true;
+    
+    @Builder.Default
+    @Column(nullable = false, length = 20)
+    private String role = "CUSTOMER";
+    
 }

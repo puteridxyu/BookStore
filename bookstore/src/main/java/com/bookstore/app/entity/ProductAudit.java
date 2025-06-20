@@ -31,8 +31,9 @@ public class ProductAudit {
     @Column(nullable = false, length = 20)
     private String eventType;
 
+    @Builder.Default
     @Column
-    private LocalDateTime changeTime = LocalDateTime.now();
+    private LocalDateTime changeTime = LocalDateTime.now(); 
 
     @Column(columnDefinition = "TEXT")
     private String oldValue;
