@@ -23,16 +23,37 @@ public class CustomerController {
         return customerService.getAllCustomers();
     }
 
+    @GetMapping("/{id}")
+    public Mono<ResponseEntity<CustomerDTO>> getCustomerById(@PathVariable Long id) {
+        log.info("Fetching customer with id: {}", id);
+        return customerService.getCustomerById(id)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
     @PostMapping
-    public Mono<CustomerDTO> createCustomer(@RequestBody CustomerDTO customerDTO) {
+    public Mono<ResponseEntity<CustomerDTO>> createCustomer(@RequestBody CustomerDTO customerDTO) {
         log.info("Creating customer: {}", customerDTO);
-        return customerService.createCustomer(customerDTO);
+        return customerService.createCustomer(customerDTO)
+                .map(ResponseEntity::ok);
     }
 
     @PutMapping("/{id}")
-    public Mono<CustomerDTO> updateCustomer(@PathVariable Long id, @RequestBody CustomerDTO customerDTO) {
+    public Mono<ResponseEntity<CustomerDTO>> updateCustomer(@PathVariable Long id, @RequestBody CustomerDTO customerDTO) {
         log.info("Updating customer id {} with data: {}", id, customerDTO);
-        return customerService.updateCustomer(id, customerDTO);
+        return customerService.updateCustomer(id, customerDTO)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/name")
+    public Mono<ResponseEntity<CustomerDTO>> updateCustomerName(
+            @PathVariable Long id,
+            @RequestBody CustomerDTO customerDTO) {
+        log.info("Patching name for customer id {}: {}", id, customerDTO);
+        return customerService.UpdateCustomerName(id, customerDTO)  
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")

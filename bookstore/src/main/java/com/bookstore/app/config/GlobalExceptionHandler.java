@@ -1,30 +1,48 @@
 package com.bookstore.app.config;
 
+import com.bookstore.app.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDateTime;
 
 @Slf4j
 @RestControllerAdvice
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(0)
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
-    public Mono<ResponseEntity<String>> handleException(Exception ex) {
+    public Mono<ResponseEntity<ErrorResponse>> handleAllExceptions(Exception ex, ServerWebExchange exchange) {
         log.error("Unexpected error occurred: ", ex);
-        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Internal Server Error: " + ex.getMessage()));
+
+        String path = exchange.getRequest().getPath().value();
+
+        ErrorResponse response = new ErrorResponse(
+                "Internal Server Error: " + ex.getMessage(),
+                path,
+                LocalDateTime.now()
+        );
+
+        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public Mono<ResponseEntity<String>> handleBadRequest(IllegalArgumentException ex) {
+    public Mono<ResponseEntity<ErrorResponse>> handleBadRequest(IllegalArgumentException ex, ServerWebExchange exchange) {
         log.warn("Bad request: ", ex);
-        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body("Bad Request: " + ex.getMessage()));
+
+        String path = exchange.getRequest().getPath().value();
+
+        ErrorResponse response = new ErrorResponse(
+                "Bad Request: " + ex.getMessage(),
+                path,
+                LocalDateTime.now()
+        );
+
+        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response));
     }
 }

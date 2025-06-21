@@ -2,6 +2,7 @@ package com.bookstore.app.service;
 
 import com.bookstore.app.dto.CustomerDTO;
 import com.bookstore.app.entity.Customer;
+import com.bookstore.app.event.KafkaProducer;
 import com.bookstore.app.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,13 +14,19 @@ import reactor.core.publisher.Mono;
 public class CustomerService {
 
     private final CustomerRepository repository;
+    private final KafkaProducer kafkaProducer;
 
     public Flux<CustomerDTO> getAllCustomers() {
         return repository.findAll().map(this::toDTO);
     }
 
     public Mono<CustomerDTO> createCustomer(CustomerDTO dto) {
-        return repository.save(toEntity(dto)).map(this::toDTO);
+        return repository.save(toEntity(dto))
+            .map(this::toDTO)
+            .doOnSuccess(savedDto -> {
+                String msg = "New customer created: " + savedDto.getFirstName() + " " + savedDto.getLastName();
+                kafkaProducer.send("customer-topic", msg);
+            });
     }
 
     public Mono<CustomerDTO> updateCustomer(Long id, CustomerDTO dto) {
@@ -48,7 +55,7 @@ public class CustomerService {
         dto.setPhoneNumber(customer.getPhoneNumber());
         return dto;
     }
-
+    
     private Customer toEntity(CustomerDTO dto) {
         Customer entity = new Customer();
         entity.setCustomerId(dto.getCustomerId());
@@ -58,5 +65,20 @@ public class CustomerService {
         entity.setEmailPersonal(dto.getEmailPersonal());
         entity.setPhoneNumber(dto.getPhoneNumber());
         return entity;
+    }
+    
+    public Mono<CustomerDTO> UpdateCustomerName(Long id, CustomerDTO dto) {
+        return repository.findById(id)
+                .flatMap(existing -> {
+                    if (dto.getFirstName() != null) existing.setFirstName(dto.getFirstName());
+                    if (dto.getLastName() != null) existing.setLastName(dto.getLastName());
+                    return repository.save(existing);
+                })
+                .map(this::toDTO);
+    }
+    
+    public Mono<CustomerDTO> getCustomerById(Long id) {
+        return repository.findById(id)
+                .map(this::toDTO);
     }
 }

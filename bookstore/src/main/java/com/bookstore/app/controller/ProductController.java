@@ -4,6 +4,7 @@ import com.bookstore.app.dto.ProductDTO;
 import com.bookstore.app.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -22,21 +23,41 @@ public class ProductController {
         return productService.getAllProducts();
     }
 
-    @PatchMapping("/{id}/quantity")
-    public Mono<ProductDTO> updateQuantity(@PathVariable Long id, @RequestBody ProductDTO dto) {
-        log.info("Updating quantity for product {}", id);
-        return productService.updateProductQuantity(id, dto.getBookQuantity());
+    @GetMapping("/{id}")
+    public Mono<ResponseEntity<ProductDTO>> getProductById(@PathVariable Long id) {
+        log.info("Fetching product with id {}", id);
+        return productService.getProductById(id)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public Mono<ProductDTO> createProduct(@RequestBody ProductDTO dto) {
+    public Mono<ResponseEntity<ProductDTO>> createProduct(@RequestBody ProductDTO dto) {
         log.info("Creating product: {}", dto);
-        return productService.createProduct(dto);
+        return productService.createProduct(dto)
+                .map(ResponseEntity::ok);
+    }
+
+    @PutMapping("/{id}")
+    public Mono<ResponseEntity<ProductDTO>> updateProduct(@PathVariable Long id, @RequestBody ProductDTO dto) {
+        log.info("Updating product with id {}: {}", id, dto);
+        return productService.updateProduct(id, dto)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}")
+    public Mono<ResponseEntity<ProductDTO>> patchProduct(@PathVariable Long id, @RequestBody ProductDTO dto) {
+        log.info("Patching product with id {}: {}", id, dto);
+        return productService.partialUpdateProduct(id, dto)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public Mono<Void> deleteProduct(@PathVariable Long id) {
+    public Mono<ResponseEntity<Void>> deleteProduct(@PathVariable Long id) {
         log.info("Deleting product with id: {}", id);
-        return productService.deleteProduct(id);
+        return productService.deleteProduct(id)
+                .thenReturn(ResponseEntity.noContent().build());
     }
 }
