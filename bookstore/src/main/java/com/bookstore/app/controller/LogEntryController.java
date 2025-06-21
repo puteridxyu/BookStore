@@ -4,23 +4,17 @@ import com.bookstore.app.entity.LogEntry;
 import com.bookstore.app.service.LogEntryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/api/logs")
 @RequiredArgsConstructor
 public class LogEntryController {
 
-    private final LogEntryService logEntryService;
+    private final LogEntryService logService;
 
     @GetMapping
-    public List<LogEntry> getAll() {
-        return logEntryService.getAll();
-    }
-
-    @PostMapping
-    public LogEntry create(@RequestBody LogEntry log) {
-        return logEntryService.save(log);
+    public Flux<LogEntry> getLogs() {
+        return logService.getAllLogs();
     }
 }

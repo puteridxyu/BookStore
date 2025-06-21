@@ -1,42 +1,42 @@
 package com.bookstore.app.controller;
 
-import com.bookstore.app.entity.Product;
+import com.bookstore.app.dto.ProductDTO;
 import com.bookstore.app.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
+@Slf4j
 public class ProductController {
 
     private final ProductService productService;
 
     @GetMapping
-    public List<Product> getAll() {
-        return productService.getAll();
+    public Flux<ProductDTO> getAllProducts() {
+        log.info("Fetching all products");
+        return productService.getAllProducts();
     }
 
-    @GetMapping("/{id}")
-    public Product getById(@PathVariable Long id) {
-        return productService.getById(id);
+    @PatchMapping("/{id}/quantity")
+    public Mono<ProductDTO> updateQuantity(@PathVariable Long id, @RequestBody ProductDTO dto) {
+        log.info("Updating quantity for product {}", id);
+        return productService.updateProductQuantity(id, dto.getBookQuantity());
     }
 
     @PostMapping
-    public Product create(@RequestBody Product product) {
-        return productService.save(product);
+    public Mono<ProductDTO> createProduct(@RequestBody ProductDTO dto) {
+        log.info("Creating product: {}", dto);
+        return productService.createProduct(dto);
     }
-    
-    @PutMapping("/{id}")
-    public Product update(@PathVariable Long id, @RequestBody Product product) {
-        return productService.update(id, product);
-    }
-
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        productService.delete(id);
+    public Mono<Void> deleteProduct(@PathVariable Long id) {
+        log.info("Deleting product with id: {}", id);
+        return productService.deleteProduct(id);
     }
 }

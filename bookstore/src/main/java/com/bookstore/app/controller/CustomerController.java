@@ -1,52 +1,44 @@
 package com.bookstore.app.controller;
 
-import com.bookstore.app.entity.Customer;
+import com.bookstore.app.dto.CustomerDTO;
 import com.bookstore.app.service.CustomerService;
-
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/customers")
 @RequiredArgsConstructor
+@Slf4j
 public class CustomerController {
 
     private final CustomerService customerService;
 
     @GetMapping
-    public List<Customer> getAll() {
+    public Flux<CustomerDTO> getAllCustomers() {
+        log.info("Fetching all customers");
         return customerService.getAllCustomers();
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Customer> getById(@PathVariable Long id) {
-        return customerService.getCustomerById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
     @PostMapping
-    public Customer create(@RequestBody Customer customer) {
-        return customerService.createCustomer(customer);
+    public Mono<CustomerDTO> createCustomer(@RequestBody CustomerDTO customerDTO) {
+        log.info("Creating customer: {}", customerDTO);
+        return customerService.createCustomer(customerDTO);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Customer> update(@PathVariable Long id, @RequestBody Customer customer) {
-        try {
-            Customer updated = customerService.updateCustomer(id, customer);
-            return ResponseEntity.ok(updated);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public Mono<CustomerDTO> updateCustomer(@PathVariable Long id, @RequestBody CustomerDTO customerDTO) {
+        log.info("Updating customer id {} with data: {}", id, customerDTO);
+        return customerService.updateCustomer(id, customerDTO);
     }
 
-
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        customerService.deleteCustomer(id);
+    public Mono<ResponseEntity<Void>> deleteCustomer(@PathVariable Long id) {
+        log.info("Deleting customer id: {}", id);
+        return customerService.deleteCustomer(id)
+                .thenReturn(ResponseEntity.noContent().build());
     }
 }

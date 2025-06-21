@@ -1,16 +1,11 @@
-package com.bookstore.app.entity;
+package com.bookstore.app.dto;
 
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Data
-@Table("product")
-public class Product {
-    @Id
+public class ProductDTO {
     private Long productId;
     private String bookTitle;
     private BigDecimal bookPrice;
@@ -18,5 +13,4 @@ public class Product {
     private String bookCategory;
     private String bookDesc;
     private String bookImg;
-    private LocalDateTime createdAt;
 }

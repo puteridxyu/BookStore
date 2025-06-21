@@ -1,27 +1,18 @@
 package com.bookstore.app.service;
 
 import com.bookstore.app.entity.LogEntry;
-import com.bookstore.app.repository.CustomerRepository;
 import com.bookstore.app.repository.LogEntryRepository;
-
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
 
 @Service
 @RequiredArgsConstructor
 public class LogEntryService {
 
-    private final LogEntryRepository logEntryRepository;
+    private final LogEntryRepository logRepository;
 
-    public List<LogEntry> getAll() {
-        return logEntryRepository.findAll();
-    }
-
-    public LogEntry save(LogEntry entry) {
-        return logEntryRepository.save(entry);
+    public Flux<LogEntry> getAllLogs() {
+        return logRepository.findAll();
     }
 }
