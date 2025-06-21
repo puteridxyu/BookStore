@@ -4,20 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Table(name = "product")
@@ -44,29 +32,46 @@ public class Product {
     @Column(nullable = false, length = 50)
     private BookCategory bookCategory;
 
+    @Column(columnDefinition = "TEXT")
+    private String bookDesc;
+
+    @Column(columnDefinition = "TEXT")
+    private String bookImg;
+
     @Builder.Default
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @OneToMany(mappedBy = "product", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductAudit> audits;
 
     public enum BookCategory {
-        ENGLISH,
-        LITERATURE,
-        STUDENT_REFERENCE,
-        SCIENCE,
-        TECHNOLOGY,
-        CHILDREN,
-        RELIGION,
-        COMICS,
-        HISTORY,
-        BUSINESS,
-        SELF_HELP,
-        COOKING,
-        HEALTH_WELLNESS,
-        TRAVEL,
-        MOTIVATION,
-        ART_DESIGN
+        ENGLISH("English"),
+        LITERATURE("Literature"),
+        STUDENT_REFERENCE("Student Reference"),
+        SCIENCE("Science"),
+        TECHNOLOGY("Technology"),
+        CHILDREN("Children"),
+        RELIGION("Religion"),
+        COMICS("Comics"),
+        HISTORY("History"),
+        BUSINESS("Business"),
+        SELF_HELP("Self Help"),
+        COOKING("Cooking"),
+        HEALTH_WELLNESS("Health & Wellness"),
+        TRAVEL("Travel"),
+        MOTIVATION("Motivation"),
+        ART_DESIGN("Art & Design");
+
+        private final String label;
+
+        BookCategory(String label) {
+            this.label = label;
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
     }
 }

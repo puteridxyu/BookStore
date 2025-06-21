@@ -12,7 +12,7 @@ CREATE TABLE customer (
     first_name      VARCHAR(100) NOT NULL,
     last_name       VARCHAR(100) NOT NULL,
     email_office    VARCHAR(150),
-    email_personal  VARCHAR(150),
+    email_personal  VARCHAR(150) UNIQUE,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -21,7 +21,7 @@ CREATE TABLE "user" (
     user_id         BIGSERIAL PRIMARY KEY,
     username        VARCHAR(100) UNIQUE NOT NULL,
     password   VARCHAR(255) NOT NULL,
-    email           VARCHAR(150),
+    email           VARCHAR(150) UNIQUE,
 	is_active       BOOLEAN NOT NULL DEFAULT TRUE,
     role            VARCHAR(20) NOT NULL DEFAULT 'CUSTOMER' CHECK (role IN ('ADMIN', 'STAFF', 'CUSTOMER')),
     customer_id     BIGINT REFERENCES customer(customer_id) ON DELETE SET NULL
@@ -86,5 +86,13 @@ CREATE TABLE log_entry (
     request_body    TEXT,
     response_body   TEXT,
     status_code     INTEGER,
-    ip_address      VARCHAR(45)
+    ip_address      VARCHAR(45),
+    user_id         BIGINT REFERENCES "user"(user_id) ON DELETE SET NULL
 );
+
+--SELECT * FROM family_member;
+--SELECT * FROM customer;
+--SELECT * FROM user;
+--SELECT * FROM product;
+--SELECT * FROM product_audit;
+--SELECT * FROM log_entry;

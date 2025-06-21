@@ -1,17 +1,21 @@
 package com.bookstore.app.service;
 
 import com.bookstore.app.entity.User;
+import com.bookstore.app.repository.CustomerRepository;
 import com.bookstore.app.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     public List<User> getAll() {
         return userRepository.findAll();

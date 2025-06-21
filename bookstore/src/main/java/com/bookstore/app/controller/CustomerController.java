@@ -2,6 +2,8 @@ package com.bookstore.app.controller;
 
 import com.bookstore.app.entity.Customer;
 import com.bookstore.app.service.CustomerService;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,9 +35,15 @@ public class CustomerController {
     }
 
     @PutMapping("/{id}")
-    public Customer update(@PathVariable Long id, @RequestBody Customer customer) {
-        return customerService.updateCustomer(id, customer);
+    public ResponseEntity<Customer> update(@PathVariable Long id, @RequestBody Customer customer) {
+        try {
+            Customer updated = customerService.updateCustomer(id, customer);
+            return ResponseEntity.ok(updated);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
+
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {

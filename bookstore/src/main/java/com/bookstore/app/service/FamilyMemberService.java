@@ -1,17 +1,19 @@
 package com.bookstore.app.service;
 
 import com.bookstore.app.entity.FamilyMember;
+import com.bookstore.app.repository.CustomerRepository;
 import com.bookstore.app.repository.FamilyMemberRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class FamilyMemberService {
 
-    @Autowired
-    private FamilyMemberRepository familyMemberRepository;
+    private final FamilyMemberRepository familyMemberRepository;
 
     public List<FamilyMember> getAll() {
         return familyMemberRepository.findAll();
