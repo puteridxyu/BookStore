@@ -3,6 +3,7 @@ package com.bookstore.app.controller;
 import com.bookstore.app.dto.ProductDTO;
 import com.bookstore.app.service.ProductService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,20 +35,20 @@ public class ProductController {
     }
 
     @PostMapping
-    public Mono<ResponseEntity<ProductDTO>> createProduct(@RequestBody ProductDTO dto) {
+    public Mono<ResponseEntity<ProductDTO>> createProduct(@Valid @RequestBody ProductDTO dto) {
         return productService.createProduct(dto)
                 .map(ResponseEntity::ok);
     }
 
     @PutMapping("/{id}")
-    public Mono<ResponseEntity<ProductDTO>> updateProduct(@PathVariable Long id, @RequestBody ProductDTO dto) {
+    public Mono<ResponseEntity<ProductDTO>> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductDTO dto) {
         return productService.updateProduct(id, dto)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{id}/quantity")
-    public Mono<ResponseEntity<ProductDTO>> patchProductQuantity(@PathVariable Long id, @RequestBody ProductDTO dto) {
+    public Mono<ResponseEntity<ProductDTO>> patchProductQuantity(@PathVariable Long id, @Valid @RequestBody ProductDTO dto) {
         return productService.updateProductQuantity(id, dto)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());

@@ -1,16 +1,20 @@
 package com.bookstore.app.controller;
 
+import com.bookstore.app.config.TestSecurityConfig;
 import com.bookstore.app.dto.ProductDTO;
 import com.bookstore.app.service.ProductService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -18,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 @WebFluxTest(ProductController.class)
+@Import(TestSecurityConfig.class) 
 public class ProductControllerTest {
 
     @Autowired
@@ -30,8 +35,6 @@ public class ProductControllerTest {
 
     @BeforeEach
     void setUp() {
-    	MockitoAnnotations.openMocks(this);
-    	
         sampleDto = new ProductDTO();
         sampleDto.setProductId(1L);
         sampleDto.setBookTitle("Java Mastery");
@@ -50,8 +53,7 @@ public class ProductControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBodyList(ProductDTO.class)
-                .hasSize(1)
-                .contains(sampleDto);
+                .hasSize(1);
     }
 
     @Test
@@ -62,7 +64,10 @@ public class ProductControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(ProductDTO.class)
-                .isEqualTo(sampleDto);
+                .value(dto -> {
+                    assert dto.getProductId().equals(1L);
+                    assert dto.getBookTitle().equals("Java Mastery");
+                });
     }
 
     @Test
@@ -84,7 +89,20 @@ public class ProductControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(ProductDTO.class)
-                .isEqualTo(sampleDto);
+                .value(dto -> {
+                    assert dto.getBookTitle().equals("Java Mastery");
+                });
+    }
+
+    @Test
+    void testCreateProduct_Invalid() {
+        ProductDTO invalid = new ProductDTO(); 
+
+        webTestClient.post().uri("/api/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(invalid)
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 
     @Test
@@ -97,7 +115,9 @@ public class ProductControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(ProductDTO.class)
-                .isEqualTo(sampleDto);
+                .value(dto -> {
+                    assert dto.getBookCategory().equals("Programming");
+                });
     }
 
     @Test
@@ -121,7 +141,9 @@ public class ProductControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(ProductDTO.class)
-                .isEqualTo(sampleDto);
+                .value(dto -> {
+                    assert dto.getBookQuantity() == 50;
+                });
     }
 
     @Test

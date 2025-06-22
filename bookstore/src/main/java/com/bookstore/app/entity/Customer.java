@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Data
 @Table("customer")
 public class Customer {
+    
     @Id
     @Column("customer_id")
     private Long customerId;

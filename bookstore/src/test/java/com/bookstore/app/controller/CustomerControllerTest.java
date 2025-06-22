@@ -1,21 +1,25 @@
 package com.bookstore.app.controller;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
+import com.bookstore.app.config.TestSecurityConfig;  
 import com.bookstore.app.dto.CustomerDTO;
 import com.bookstore.app.service.CustomerService;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import static org.mockito.Mockito.*;
+
 @WebFluxTest(CustomerController.class)
+@Import(TestSecurityConfig.class) 
 public class CustomerControllerTest {
 
     @Autowired
@@ -28,8 +32,6 @@ public class CustomerControllerTest {
 
     @BeforeEach
     void setUp() {
-    	MockitoAnnotations.openMocks(this);
-    	
         sampleDto = new CustomerDTO();
         sampleDto.setCustomerId(1L);
         sampleDto.setFirstName("John");
@@ -37,71 +39,82 @@ public class CustomerControllerTest {
         sampleDto.setEmailOffice("john.doe@office.com");
         sampleDto.setEmailPersonal("john.doe@gmail.com");
         sampleDto.setPhoneNumber("123456789");
-        
     }
 
     @Test
     void testGetAllCustomers() {
-        Mockito.when(customerService.getAllCustomers()).thenReturn(Flux.just(sampleDto));
+        when(customerService.getAllCustomers()).thenReturn(Flux.just(sampleDto));
 
         webTestClient.get().uri("/api/customers")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBodyList(CustomerDTO.class).hasSize(1);
+                .expectBodyList(CustomerDTO.class)
+                .hasSize(1);
     }
 
     @Test
     void testGetCustomerById() {
-        Mockito.when(customerService.getCustomerById(1L)).thenReturn(Mono.just(sampleDto));
+        when(customerService.getCustomerById(1L)).thenReturn(Mono.just(sampleDto));
 
         webTestClient.get().uri("/api/customers/1")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(CustomerDTO.class);
+                .expectBody(CustomerDTO.class)
+                .isEqualTo(sampleDto);
     }
 
     @Test
     void testCreateCustomer() {
-        Mockito.when(customerService.createCustomer(Mockito.any())).thenReturn(Mono.just(sampleDto));
+        when(customerService.createCustomer(any())).thenReturn(Mono.just(sampleDto));
 
         webTestClient.post().uri("/api/customers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(sampleDto)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(CustomerDTO.class);
+                .expectBody(CustomerDTO.class)
+                .isEqualTo(sampleDto);
     }
 
     @Test
     void testUpdateCustomer() {
-        Mockito.when(customerService.updateCustomer(Mockito.eq(1L), Mockito.any())).thenReturn(Mono.just(sampleDto));
+        when(customerService.updateCustomer(eq(1L), any())).thenReturn(Mono.just(sampleDto));
 
         webTestClient.put().uri("/api/customers/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(sampleDto)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(CustomerDTO.class);
+                .expectBody(CustomerDTO.class)
+                .isEqualTo(sampleDto);
     }
 
     @Test
     void testUpdateCustomerName() {
-        CustomerDTO patchDto = new CustomerDTO();
-        patchDto.setFirstName("Patched");
+        CustomerDTO updatedNameDto = new CustomerDTO();
+        updatedNameDto.setCustomerId(1L);
+        updatedNameDto.setFirstName("Jane");
+        updatedNameDto.setLastName("Smith");
 
-        Mockito.when(customerService.updateCustomerName(Mockito.eq(1L), Mockito.any())).thenReturn(Mono.just(patchDto));
+        updatedNameDto.setEmailOffice("jane.smith@office.com");
+        updatedNameDto.setEmailPersonal("jane.smith@gmail.com");
+        updatedNameDto.setPhoneNumber("987654321");
+
+        when(customerService.updateCustomerName(eq(1L), any())).thenReturn(Mono.just(updatedNameDto));
 
         webTestClient.patch().uri("/api/customers/1/name")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(patchDto)
+                .bodyValue(updatedNameDto)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(CustomerDTO.class);
+                .expectBody(CustomerDTO.class)
+                .isEqualTo(updatedNameDto);
     }
+
 
     @Test
     void testDeleteCustomer() {
-        Mockito.when(customerService.deleteCustomer(1L)).thenReturn(Mono.empty());
+        when(customerService.deleteCustomer(1L)).thenReturn(Mono.empty());
 
         webTestClient.delete().uri("/api/customers/1")
                 .exchange()

@@ -3,10 +3,12 @@ package com.bookstore.app.controller;
 import com.bookstore.app.dto.CustomerDTO;
 import com.bookstore.app.service.CustomerService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import reactor.core.publisher.Flux;
@@ -16,6 +18,7 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/customers")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class CustomerController {
 
     private final CustomerService customerService;
@@ -33,13 +36,13 @@ public class CustomerController {
     }
 
     @PostMapping
-    public Mono<ResponseEntity<CustomerDTO>> createCustomer(@RequestBody CustomerDTO customerDTO) {
+    public Mono<ResponseEntity<CustomerDTO>> createCustomer(@Valid @RequestBody CustomerDTO customerDTO) {
         return customerService.createCustomer(customerDTO)
                 .map(ResponseEntity::ok);
     }
 
     @PutMapping("/{id}")
-    public Mono<ResponseEntity<CustomerDTO>> updateCustomer(@PathVariable Long id, @RequestBody CustomerDTO customerDTO) {
+    public Mono<ResponseEntity<CustomerDTO>> updateCustomer(@PathVariable Long id, @Valid @RequestBody CustomerDTO customerDTO) {
         return customerService.updateCustomer(id, customerDTO)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
@@ -48,8 +51,8 @@ public class CustomerController {
     @PatchMapping("/{id}/name")
     public Mono<ResponseEntity<CustomerDTO>> updateCustomerName(
             @PathVariable Long id,
-            @RequestBody CustomerDTO customerDTO) {
-        return customerService.updateCustomerName(id, customerDTO)  
+            @Valid @RequestBody CustomerDTO customerDTO) {
+        return customerService.updateCustomerName(id, customerDTO)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }

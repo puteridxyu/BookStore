@@ -8,6 +8,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @Data
 @Table("family_member")
 public class FamilyMember {
+
     @Id
     @Column("family_id")
     private Long familyId;

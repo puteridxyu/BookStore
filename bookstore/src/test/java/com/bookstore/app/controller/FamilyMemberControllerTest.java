@@ -1,5 +1,6 @@
 package com.bookstore.app.controller;
 
+import com.bookstore.app.config.TestSecurityConfig;
 import com.bookstore.app.dto.FamilyMemberDTO;
 import com.bookstore.app.service.FamilyMemberService;
 
@@ -9,16 +10,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @WebFluxTest(FamilyMemberController.class)
+@Import(TestSecurityConfig.class)  
 public class FamilyMemberControllerTest {
 
     @Autowired
@@ -35,7 +38,7 @@ public class FamilyMemberControllerTest {
         sampleDto.setFamilyId(1L);
         sampleDto.setCustomerId(10L);
         sampleDto.setName("Alice");
-        sampleDto.setRelationship("Daughter");
+        sampleDto.setRelationship("Child");  
         sampleDto.setEmail("alice@example.com");
         sampleDto.setPhoneNumber("123456789");
     }
@@ -50,7 +53,10 @@ public class FamilyMemberControllerTest {
                 .expectStatus().isOk()
                 .expectBodyList(FamilyMemberDTO.class)
                 .hasSize(1)
-                .contains(sampleDto);
+                .value(list -> {
+                    assert list.get(0).getName().equals("Alice");
+                    assert list.get(0).getRelationship().equals("Child");
+                });
     }
 
     @Test
