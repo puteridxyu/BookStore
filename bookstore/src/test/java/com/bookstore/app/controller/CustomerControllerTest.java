@@ -3,6 +3,7 @@ package com.bookstore.app.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -13,8 +14,6 @@ import reactor.core.publisher.Mono;
 
 import com.bookstore.app.dto.CustomerDTO;
 import com.bookstore.app.service.CustomerService;
- 
-
 
 @WebFluxTest(CustomerController.class)
 public class CustomerControllerTest {
@@ -29,6 +28,8 @@ public class CustomerControllerTest {
 
     @BeforeEach
     void setUp() {
+    	MockitoAnnotations.openMocks(this);
+    	
         sampleDto = new CustomerDTO();
         sampleDto.setCustomerId(1L);
         sampleDto.setFirstName("John");
@@ -36,6 +37,7 @@ public class CustomerControllerTest {
         sampleDto.setEmailOffice("john.doe@office.com");
         sampleDto.setEmailPersonal("john.doe@gmail.com");
         sampleDto.setPhoneNumber("123456789");
+        
     }
 
     @Test

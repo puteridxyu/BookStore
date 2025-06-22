@@ -32,9 +32,9 @@ public class FamilyMemberControllerTest {
     @BeforeEach
     void setUp() {
         sampleDto = new FamilyMemberDTO();
-        sampleDto.setId(1L);
+        sampleDto.setFamilyId(1L);
         sampleDto.setCustomerId(10L);
-        sampleDto.setMemberName("Alice");
+        sampleDto.setName("Alice");
         sampleDto.setRelationship("Daughter");
         sampleDto.setEmail("alice@example.com");
         sampleDto.setPhoneNumber("123456789");
@@ -42,7 +42,7 @@ public class FamilyMemberControllerTest {
 
     @Test
     void testGetAllFamilyMembers() {
-        when(familyMemberService.getAllByCustomerId(10L)).thenReturn(Flux.just(sampleDto));
+        when(familyMemberService.getAllFamilyMemberByCustomerId(10L)).thenReturn(Flux.just(sampleDto));
 
         webTestClient.get()
                 .uri("/api/customers/10/family-members")
@@ -55,7 +55,7 @@ public class FamilyMemberControllerTest {
 
     @Test
     void testCreateFamilyMember() {
-        when(familyMemberService.create(any(FamilyMemberDTO.class))).thenReturn(Mono.just(sampleDto));
+        when(familyMemberService.createFamilyMember(any(FamilyMemberDTO.class))).thenReturn(Mono.just(sampleDto));
 
         webTestClient.post()
                 .uri("/api/customers/10/family-members")
@@ -69,7 +69,7 @@ public class FamilyMemberControllerTest {
 
     @Test
     void testDeleteFamilyMember() {
-        when(familyMemberService.delete(1L)).thenReturn(Mono.empty());
+        when(familyMemberService.deleteFamilyMember(1L)).thenReturn(Mono.empty());
 
         webTestClient.delete()
                 .uri("/api/customers/10/family-members/1")

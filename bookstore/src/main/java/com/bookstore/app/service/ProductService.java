@@ -1,46 +1,52 @@
 package com.bookstore.app.service;
 
+import com.bookstore.app.config.KafkaConfig;
 import com.bookstore.app.dto.ProductDTO;
 import com.bookstore.app.entity.Product;
 import com.bookstore.app.event.KafkaProducer;
 import com.bookstore.app.repository.ProductRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ProductService {
 
-    private final ProductRepository productRepository;
+    private final ProductRepository repository;
     private final KafkaProducer kafkaProducer;
 
-    @Value("${kafka.topic.product}")
-    private String productTopic;
-
     public Flux<ProductDTO> getAllProducts() {
-        return productRepository.findAll()
-                .map(this::toDTO);
+    	log.info("Fetching all products from DB");
+        return repository.findAll().map(this::toDTO);
     }
 
+    @Cacheable(cacheNames = "products", key = "#id")
     public Mono<ProductDTO> getProductById(Long id) {
-        return productRepository.findById(id)
-                .map(this::toDTO);
+    	log.info("Fetching product with ID: {} from DB", id);
+        return repository.findById(id).map(this::toDTO);
     }
 
+    @CacheEvict(cacheNames = "products", key = "#result.productId", condition = "#result != null")
     public Mono<ProductDTO> createProduct(ProductDTO dto) {
-        Product product = toEntity(dto);
-        return productRepository.save(product)
+        Product entity = toEntity(dto);
+        return repository.save(entity)
                 .map(this::toDTO)
                 .doOnSuccess(saved -> sendKafkaEvent("created", saved));
     }
 
+    @CacheEvict(cacheNames = "products", key = "#id")
     public Mono<ProductDTO> updateProduct(Long id, ProductDTO dto) {
-        return productRepository.findById(id)
+        return repository.findById(id)
                 .flatMap(existing -> {
                     existing.setBookTitle(dto.getBookTitle());
                     existing.setBookPrice(dto.getBookPrice());
@@ -48,34 +54,38 @@ public class ProductService {
                     existing.setBookCategory(dto.getBookCategory());
                     existing.setBookDesc(dto.getBookDesc());
                     existing.setBookImg(dto.getBookImg());
-                    return productRepository.save(existing);
+                    return repository.save(existing);
                 })
                 .map(this::toDTO)
                 .doOnSuccess(updated -> sendKafkaEvent("updated", updated));
     }
 
+    @CacheEvict(cacheNames = "products", key = "#id")
     public Mono<ProductDTO> updateProductQuantity(Long id, ProductDTO dto) {
-        return productRepository.findById(id)
+        return repository.findById(id)
                 .flatMap(existing -> {
                     existing.setBookQuantity(dto.getBookQuantity());
-                    return productRepository.save(existing);
+                    return repository.save(existing);
                 })
                 .map(this::toDTO)
                 .doOnSuccess(updated -> sendKafkaEvent("quantity-updated", updated));
     }
 
+    @CacheEvict(cacheNames = "products", key = "#id")
     public Mono<Void> deleteProduct(Long id) {
-        return productRepository.findById(id)
+        return repository.findById(id)
                 .flatMap(existing ->
-                    productRepository.delete(existing)
+                    repository.delete(existing)
                         .doOnSuccess(v -> sendKafkaEvent("deleted", toDTO(existing)))
                 );
     }
 
     private void sendKafkaEvent(String action, ProductDTO dto) {
-        String message = String.format("{\"event\":\"%s\",\"title\":\"%s\",\"id\":%d}", 
-                            action, dto.getBookTitle(), dto.getProductId());
-        kafkaProducer.send(productTopic, message);
+        String message = String.format(
+            "{\"event\":\"%s\",\"title\":\"%s\",\"id\":%d,\"timestamp\":\"%s\"}",
+            action, dto.getBookTitle(), dto.getProductId(), java.time.Instant.now()
+        );
+        kafkaProducer.send(KafkaConfig.PRODUCT_TOPIC, message);
         log.info("Kafka event sent: {}", message);
     }
 

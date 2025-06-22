@@ -103,11 +103,18 @@
 	        </exclusions>
 	    </dependency>
 	    
-        <!-- Hazelcast (Caching) -->
-<!--        <dependency>-->
-<!--            <groupId>com.hazelcast</groupId>-->
-<!--            <artifactId>hazelcast</artifactId>-->
-<!--        </dependency>-->
+      	<!-- Hazelcast integration with Spring Boot Cache -->
+		<dependency>
+		    <groupId>com.hazelcast</groupId>
+		    <artifactId>hazelcast-spring</artifactId>
+		    <version>5.2.1</version>
+		</dependency>
+		
+		<!-- Enables Spring Boot cache abstraction -->
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
 
         <!-- Kafka (Eventing) -->
         <dependency>

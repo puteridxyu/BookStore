@@ -1,13 +1,18 @@
 package com.bookstore.app.service;
 
+import com.bookstore.app.config.KafkaConfig;
 import com.bookstore.app.dto.CustomerDTO;
 import com.bookstore.app.entity.Customer;
 import com.bookstore.app.event.KafkaProducer;
 import com.bookstore.app.repository.CustomerRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -18,31 +23,28 @@ public class CustomerService {
 
     private final CustomerRepository repository;
     private final KafkaProducer kafkaProducer;
-
+    
     public Flux<CustomerDTO> getAllCustomers() {
         log.info("Fetching all customers from DB");
         return repository.findAll().map(this::toDTO);
     }
 
+    @Cacheable(cacheNames = "customers", key = "#id")
     public Mono<CustomerDTO> getCustomerById(Long id) {
-        log.info("Fetching customer with ID: {}", id);
-        return repository.findById(id)
-                .map(this::toDTO);
+        log.info("Fetching customer with ID: {} from DB", id);
+        return repository.findById(id).map(this::toDTO);
     }
 
+    @CacheEvict(cacheNames = "customers", key = "#result.customerId", condition = "#result != null")
     public Mono<CustomerDTO> createCustomer(CustomerDTO dto) {
         Customer entity = toEntity(dto);
         return repository.save(entity)
-                .map(this::toDTO)
-                .doOnSuccess(savedDto -> {
-                    String msg = "New customer created: " + savedDto.getFirstName() + " " + savedDto.getLastName();
-                    log.info(msg);
-                    kafkaProducer.send("customer-topic", msg);
-                });
+        		.map(this::toDTO)
+                .doOnSuccess(saved -> sendKafkaEvent("created", saved));
     }
 
+    @CacheEvict(cacheNames = "customers", key = "#id")
     public Mono<CustomerDTO> updateCustomer(Long id, CustomerDTO dto) {
-        log.info("Updating customer with ID: {}", id);
         return repository.findById(id)
                 .flatMap(existing -> {
                     existing.setFirstName(dto.getFirstName());
@@ -52,11 +54,12 @@ public class CustomerService {
                     existing.setPhoneNumber(dto.getPhoneNumber());
                     return repository.save(existing);
                 })
-                .map(this::toDTO);
+                .map(this::toDTO)
+                .doOnSuccess(updated -> sendKafkaEvent("updated", updated));
     }
 
+    @CacheEvict(cacheNames = "customers", key = "#id")
     public Mono<CustomerDTO> updateCustomerName(Long id, CustomerDTO dto) {
-        log.info("Updating name for customer ID: {}", id);
         return repository.findById(id)
                 .flatMap(existing -> {
                     if (dto.getFirstName() != null) existing.setFirstName(dto.getFirstName());
@@ -64,18 +67,31 @@ public class CustomerService {
                     return repository.save(existing);
                 })
                 .map(this::toDTO)
-                .doOnSuccess(updatedDto -> {
-                    String msg = "Customer name updated: " + updatedDto.getFirstName() + " " + updatedDto.getLastName();
-                    log.info(msg);
-                    kafkaProducer.send("customer-topic", msg);
-                });
+                .doOnSuccess(updated -> sendKafkaEvent("customer-updated", updated));
     }
 
+    @CacheEvict(cacheNames = "customers", key = "#id")
     public Mono<Void> deleteCustomer(Long id) {
-        log.info("Deleting customer with ID: {}", id);
-        return repository.deleteById(id);
+    	return repository.findById(id)
+                .flatMap(existing ->
+                	repository.delete(existing)
+                        .doOnSuccess(v -> sendKafkaEvent("deleted", toDTO(existing)))
+                );
     }
 
+    private void sendKafkaEvent(String action, CustomerDTO dto) {
+        String message = String.format(
+            "{\"event\":\"%s\",\"firstName\":\"%s\",\"lastName\":\"%s\",\"id\":%d,\"timestamp\":\"%s\"}",
+            action,
+            dto.getFirstName(),
+            dto.getLastName(),
+            dto.getCustomerId(),
+            java.time.Instant.now()
+        );
+        kafkaProducer.send(KafkaConfig.CUSTOMER_TOPIC, message);
+        log.info("Kafka event sent: {}", message);
+    }
+    
     private CustomerDTO toDTO(Customer customer) {
         CustomerDTO dto = new CustomerDTO();
         dto.setCustomerId(customer.getCustomerId());

@@ -2,11 +2,13 @@ package com.bookstore.app.controller;
 
 import com.bookstore.app.dto.FamilyMemberDTO;
 import com.bookstore.app.service.FamilyMemberService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -20,22 +22,19 @@ public class FamilyMemberController {
 
     @GetMapping
     public Flux<FamilyMemberDTO> getAllFamilyMembers(@PathVariable Long customerId) {
-        log.info("Fetching family members for customer ID: {}", customerId);
-        return familyMemberService.getAllByCustomerId(customerId);
+        return familyMemberService.getAllFamilyMemberByCustomerId(customerId);
     }
 
     @PostMapping
     public Mono<ResponseEntity<FamilyMemberDTO>> createFamilyMember(@PathVariable Long customerId, @RequestBody FamilyMemberDTO dto) {
         dto.setCustomerId(customerId);
-        log.info("Creating family member for customer ID {}: {}", customerId, dto);
-        return familyMemberService.create(dto)
+        return familyMemberService.createFamilyMember(dto)
                 .map(ResponseEntity::ok);
     }
 
     @DeleteMapping("/{familyId}")
     public Mono<ResponseEntity<Void>> deleteFamilyMember(@PathVariable Long customerId, @PathVariable Long familyId) {
-        log.info("Deleting family member with ID: {} for customer ID: {}", familyId, customerId);
-        return familyMemberService.delete(familyId)
+        return familyMemberService.deleteFamilyMember(familyId)
                 .thenReturn(ResponseEntity.noContent().build());
     }
 }

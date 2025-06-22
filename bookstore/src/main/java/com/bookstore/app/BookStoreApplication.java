@@ -2,13 +2,14 @@ package com.bookstore.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.beans.factory.annotation.Value;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SpringBootApplication
+@EnableCaching
 public class BookStoreApplication {
 
     private static final Logger log = LoggerFactory.getLogger(BookStoreApplication.class);

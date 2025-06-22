@@ -1,5 +1,6 @@
 package com.bookstore.app.service;
 
+import com.bookstore.app.config.KafkaConfig;
 import com.bookstore.app.dto.FamilyMemberDTO;
 import com.bookstore.app.entity.FamilyMember;
 import com.bookstore.app.event.KafkaProducer;
@@ -8,7 +9,10 @@ import com.bookstore.app.repository.FamilyMemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -17,65 +21,72 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class FamilyMemberService {
 
-    private final FamilyMemberRepository familyMemberRepository;
+    private final FamilyMemberRepository repository;
     private final KafkaProducer kafkaProducer;
-
-    public Flux<FamilyMemberDTO> getAllByCustomerId(Long customerId) {
+    
+    @Cacheable(cacheNames = "family-members", key = "#customerId")
+    public Flux<FamilyMemberDTO> getAllFamilyMemberByCustomerId(Long customerId) {
         log.info("Fetching family members for customer ID: {}", customerId);
-        return familyMemberRepository.findByCustomerId(customerId)
-                .map(this::toDTO);
+        return repository.findByCustomerId(customerId)
+        		.map(this::toDTO);
     }
 
-    public Mono<FamilyMemberDTO> getById(Long id) {
+    @Cacheable(cacheNames = "family-members", key = "#id")
+    public Mono<FamilyMemberDTO> getFamilyMemberById(Long id) {
         log.info("Fetching family member by ID: {}", id);
-        return familyMemberRepository.findById(id)
-                .map(this::toDTO);
+        return repository.findById(id)
+        		.map(this::toDTO);
     }
 
-    public Mono<FamilyMemberDTO> create(FamilyMemberDTO dto) {
+    @CacheEvict(cacheNames = "family-members", allEntries = true)
+    public Mono<FamilyMemberDTO> createFamilyMember(FamilyMemberDTO dto) {
         FamilyMember entity = toEntity(dto);
-        return familyMemberRepository.save(entity)
+        return repository.save(entity)
                 .map(this::toDTO)
-                .doOnSuccess(saved -> {
-                    String msg = "Family member added: " + saved.getMemberName();
-                    log.info(msg);
-                    kafkaProducer.send("family-topic", msg);
-                });
+                .doOnSuccess(saved -> sendKafkaEvent("created", saved));
     }
 
-    public Mono<FamilyMemberDTO> update(Long id, FamilyMemberDTO dto) {
-        log.info("Updating family member with ID: {}", id);
-        return familyMemberRepository.findById(id)
+    @CacheEvict(cacheNames = "family-members", allEntries = true)
+    public Mono<FamilyMemberDTO> updateFamilyMember(Long id, FamilyMemberDTO dto) {
+        return repository.findById(id)
                 .flatMap(existing -> {
-                    existing.setName(dto.getMemberName());
+                    existing.setName(dto.getName());
                     existing.setRelationship(dto.getRelationship());
                     existing.setEmail(dto.getEmail());
                     existing.setPhoneNumber(dto.getPhoneNumber());
-                    return familyMemberRepository.save(existing);
+                    return repository.save(existing);
                 })
                 .map(this::toDTO)
-                .doOnSuccess(updated -> {
-                    String msg = "Family member updated: " + updated.getMemberName();
-                    log.info(msg);
-                    kafkaProducer.send("family-topic", msg);
-                });
+                .doOnSuccess(updated -> sendKafkaEvent("updated", updated));
     }
 
-    public Mono<Void> delete(Long id) {
-        log.info("Deleting family member with ID: {}", id);
-        return familyMemberRepository.deleteById(id)
-                .doOnSuccess(unused -> {
-                    String msg = "Family member deleted with ID: " + id;
-                    log.info(msg);
-                    kafkaProducer.send("family-topic", msg);
-                });
+    @CacheEvict(cacheNames = "family-members", allEntries = true)
+    public Mono<Void> deleteFamilyMember(Long id) {
+    	return repository.findById(id)
+                .flatMap(existing ->
+                	repository.delete(existing)
+                        .doOnSuccess(v -> sendKafkaEvent("deleted", toDTO(existing)))
+                );
+    }
+    
+    private void sendKafkaEvent(String action, FamilyMemberDTO dto) {
+        String message = String.format(
+            "{\"event\":\"%s\",\"name\":\"%s\",\"customerId\":\"%s\",\"id\":%d,\"timestamp\":\"%s\"}",
+            action,
+            dto.getName(),
+            dto.getCustomerId(),
+            dto.getFamilyId(),
+            java.time.Instant.now()
+        );
+        kafkaProducer.send(KafkaConfig.FAMILY_TOPIC, message);
+        log.info("Kafka event sent: {}", message);
     }
 
     private FamilyMemberDTO toDTO(FamilyMember entity) {
         FamilyMemberDTO dto = new FamilyMemberDTO();
-        dto.setId(entity.getFamilyId());
+        dto.setFamilyId(entity.getFamilyId());
         dto.setCustomerId(entity.getCustomerId());
-        dto.setMemberName(entity.getName());
+        dto.setName(entity.getName());
         dto.setRelationship(entity.getRelationship());
         dto.setEmail(entity.getEmail());
         dto.setPhoneNumber(entity.getPhoneNumber());
@@ -84,9 +95,9 @@ public class FamilyMemberService {
 
     private FamilyMember toEntity(FamilyMemberDTO dto) {
         FamilyMember entity = new FamilyMember();
-        entity.setFamilyId(dto.getId());
+        entity.setFamilyId(dto.getFamilyId());
         entity.setCustomerId(dto.getCustomerId());
-        entity.setName(dto.getMemberName());
+        entity.setName(dto.getName());
         entity.setRelationship(dto.getRelationship());
         entity.setEmail(dto.getEmail());
         entity.setPhoneNumber(dto.getPhoneNumber());

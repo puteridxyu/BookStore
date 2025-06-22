@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {
+    "spring.main.allow-bean-definition-overriding=true",  
     "kafka.topic.product=test-topic",
     "spring.r2dbc.url=r2dbc:h2:mem:///testdb"
 })

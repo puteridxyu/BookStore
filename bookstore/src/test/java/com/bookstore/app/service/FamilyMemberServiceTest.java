@@ -1,5 +1,6 @@
 package com.bookstore.app.service;
 
+import com.bookstore.app.config.KafkaConfig;
 import com.bookstore.app.dto.FamilyMemberDTO;
 import com.bookstore.app.entity.FamilyMember;
 import com.bookstore.app.event.KafkaProducer;
@@ -21,86 +22,82 @@ import static org.mockito.Mockito.*;
 class FamilyMemberServiceTest {
 
     @Mock
-    private FamilyMemberRepository familyMemberRepository;
+    private FamilyMemberRepository repository;
 
     @Mock
     private KafkaProducer kafkaProducer;
 
     @InjectMocks
-    private FamilyMemberService familyMemberService;
+    private FamilyMemberService service;
 
     private FamilyMember sampleEntity;
-    private FamilyMemberDTO sampleDto;
+    private FamilyMemberDTO sampleDTO;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        sampleDto = new FamilyMemberDTO();
-        sampleDto.setId(1L);
-        sampleDto.setCustomerId(10L);
-        sampleDto.setMemberName("Alice");
-        sampleDto.setRelationship("Daughter");
-        sampleDto.setEmail("alice@example.com");
-        sampleDto.setPhoneNumber("123456789");
-
         sampleEntity = new FamilyMember();
         sampleEntity.setFamilyId(1L);
-        sampleEntity.setCustomerId(10L);
-        sampleEntity.setName("Alice");
-        sampleEntity.setRelationship("Daughter");
-        sampleEntity.setEmail("alice@example.com");
-        sampleEntity.setPhoneNumber("123456789");
+        sampleEntity.setCustomerId(1L);
+        sampleEntity.setName("Aisyah");
+
+        sampleDTO = new FamilyMemberDTO();
+        sampleDTO.setFamilyId(1L);
+        sampleDTO.setCustomerId(1L);
+        sampleDTO.setName("Aisyah");
+        
     }
 
     @Test
-    void testGetAllByCustomerId() {
-        when(familyMemberRepository.findByCustomerId(10L)).thenReturn(Flux.just(sampleEntity));
+    void testGetAllFamilyMemberByCustomerId() {
+        when(repository.findByCustomerId(1L)).thenReturn(Flux.just(sampleEntity));
 
-        StepVerifier.create(familyMemberService.getAllByCustomerId(10L))
-                .expectNextMatches(fm -> fm.getMemberName().equals("Alice"))
+        StepVerifier.create(service.getAllFamilyMemberByCustomerId(1L))
+                .expectNextMatches(dto -> dto.getFamilyId() == 1L)
                 .verifyComplete();
     }
 
     @Test
-    void testGetById() {
-        when(familyMemberRepository.findById(1L)).thenReturn(Mono.just(sampleEntity));
+    void testGetFamilyMemberById() {
+        when(repository.findById(1L)).thenReturn(Mono.just(sampleEntity));
 
-        StepVerifier.create(familyMemberService.getById(1L))
-                .expectNextMatches(fm -> fm.getId().equals(1L))
+        StepVerifier.create(service.getFamilyMemberById(1L))
+                .expectNextMatches(dto -> dto.getFamilyId() == 1L)
                 .verifyComplete();
     }
 
     @Test
-    void testCreate() {
-        when(familyMemberRepository.save(any(FamilyMember.class))).thenReturn(Mono.just(sampleEntity));
+    void testCreateFamilyMember() {
+        when(repository.save(any())).thenReturn(Mono.just(sampleEntity));
 
-        StepVerifier.create(familyMemberService.create(sampleDto))
-                .expectNextMatches(fm -> fm.getEmail().equals("alice@example.com"))
+        StepVerifier.create(service.createFamilyMember(sampleDTO))
+                .expectNextMatches(dto -> dto.getFamilyId() == 1L)
                 .verifyComplete();
 
-        verify(kafkaProducer).send(eq("family-topic"), contains("added"));
+        verify(kafkaProducer, times(1)).send(eq(KafkaConfig.FAMILY_TOPIC), contains("created"));
     }
 
     @Test
-    void testUpdate() {
-        when(familyMemberRepository.findById(1L)).thenReturn(Mono.just(sampleEntity));
-        when(familyMemberRepository.save(any(FamilyMember.class))).thenReturn(Mono.just(sampleEntity));
+    void testUpdateFamilyMember() {
+        when(repository.findById(1L)).thenReturn(Mono.just(sampleEntity));
+        when(repository.save(any())).thenReturn(Mono.just(sampleEntity));
 
-        StepVerifier.create(familyMemberService.update(1L, sampleDto))
-                .expectNextMatches(fm -> fm.getRelationship().equals("Daughter"))
+        StepVerifier.create(service.updateFamilyMember(1L, sampleDTO))
+                .expectNextMatches(dto -> dto.getFamilyId() == 1L)
                 .verifyComplete();
 
-        verify(kafkaProducer).send(eq("family-topic"), contains("updated"));
+        verify(kafkaProducer, times(1)).send(eq(KafkaConfig.FAMILY_TOPIC), contains("updated"));
     }
 
     @Test
-    void testDelete() {
-        when(familyMemberRepository.deleteById(1L)).thenReturn(Mono.empty());
+    void testDeleteFamilyMember() {
+        when(repository.findById(1L)).thenReturn(Mono.just(sampleEntity));
+        when(repository.delete(any())).thenReturn(Mono.empty());
 
-        StepVerifier.create(familyMemberService.delete(1L))
+        StepVerifier.create(service.deleteFamilyMember(1L))
                 .verifyComplete();
 
-        verify(kafkaProducer).send(eq("family-topic"), contains("deleted"));
+        verify(kafkaProducer, times(1)).send(eq(KafkaConfig.FAMILY_TOPIC), contains("deleted"));
     }
 }

@@ -1,5 +1,6 @@
 package com.bookstore.app.service;
 
+import com.bookstore.app.config.KafkaConfig;
 import com.bookstore.app.dto.CustomerDTO;
 import com.bookstore.app.entity.Customer;
 import com.bookstore.app.event.KafkaProducer;
@@ -18,7 +19,7 @@ import reactor.test.StepVerifier;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-class CustomerServiceTest {
+public class CustomerServiceTest {
 
     @Mock
     private CustomerRepository repository;
@@ -27,82 +28,76 @@ class CustomerServiceTest {
     private KafkaProducer kafkaProducer;
 
     @InjectMocks
-    private CustomerService customerService;
+    private CustomerService service;
 
     private Customer sampleEntity;
     private CustomerDTO sampleDTO;
 
     @BeforeEach
-    void setUp() {
+    public void setup() {
         MockitoAnnotations.openMocks(this);
 
         sampleEntity = new Customer();
         sampleEntity.setCustomerId(1L);
-        sampleEntity.setFirstName("John");
-        sampleEntity.setLastName("Doe");
+        sampleEntity.setFirstName("Puteri");
+        sampleEntity.setLastName("Aisyah");
 
         sampleDTO = new CustomerDTO();
         sampleDTO.setCustomerId(1L);
-        sampleDTO.setFirstName("John");
-        sampleDTO.setLastName("Doe");
+        sampleDTO.setFirstName("Puteri");
+        sampleDTO.setLastName("Aisyah");
+
     }
 
     @Test
-    void testGetAllCustomers() {
+    public void testGetAllCustomers() {
         when(repository.findAll()).thenReturn(Flux.just(sampleEntity));
 
-        StepVerifier.create(customerService.getAllCustomers())
-                .expectNextMatches(dto -> dto.getFirstName().equals("John"))
+        StepVerifier.create(service.getAllCustomers())
+                .expectNextMatches(dto -> dto.getFirstName().equals("Puteri"))
                 .verifyComplete();
     }
 
     @Test
-    void testGetCustomerById() {
+    public void testGetCustomerById() {
         when(repository.findById(1L)).thenReturn(Mono.just(sampleEntity));
 
-        StepVerifier.create(customerService.getCustomerById(1L))
-                .expectNextMatches(dto -> dto.getCustomerId().equals(1L))
+        StepVerifier.create(service.getCustomerById(1L))
+                .expectNextMatches(dto -> dto.getCustomerId() == 1L)
                 .verifyComplete();
     }
 
     @Test
-    void testCreateCustomer() {
+    public void testCreateCustomer() {
         when(repository.save(any(Customer.class))).thenReturn(Mono.just(sampleEntity));
 
-        StepVerifier.create(customerService.createCustomer(sampleDTO))
-                .expectNextMatches(dto -> dto.getFirstName().equals("John"))
+        StepVerifier.create(service.createCustomer(sampleDTO))
+                .expectNextMatches(dto -> dto.getCustomerId() == 1L)
                 .verifyComplete();
 
-        verify(kafkaProducer).send(eq("customer-topic"), contains("New customer created"));
+        verify(kafkaProducer, times(1)).send(eq(KafkaConfig.CUSTOMER_TOPIC), contains("created"));
     }
 
     @Test
-    void testUpdateCustomer() {
-        when(repository.findById(1L)).thenReturn(Mono.just(sampleEntity));
-        when(repository.save(any(Customer.class))).thenReturn(Mono.just(sampleEntity));
-
-        StepVerifier.create(customerService.updateCustomer(1L, sampleDTO))
-                .expectNextMatches(dto -> dto.getFirstName().equals("John"))
-                .verifyComplete();
-    }
-
-    @Test
-    void testUpdateCustomerName() {
+    public void testUpdateCustomer() {
         when(repository.findById(1L)).thenReturn(Mono.just(sampleEntity));
         when(repository.save(any(Customer.class))).thenReturn(Mono.just(sampleEntity));
 
-        StepVerifier.create(customerService.updateCustomerName(1L, sampleDTO))
-                .expectNextMatches(dto -> dto.getFirstName().equals("John"))
+        StepVerifier.create(service.updateCustomer(1L, sampleDTO))
+                .expectNextMatches(dto -> dto.getCustomerId() == 1L)
                 .verifyComplete();
 
-        verify(kafkaProducer).send(eq("customer-topic"), contains("Customer name updated"));
+        verify(kafkaProducer, times(1)).send(eq(KafkaConfig.CUSTOMER_TOPIC), contains("updated"));
     }
 
     @Test
-    void testDeleteCustomer() {
-        when(repository.deleteById(1L)).thenReturn(Mono.empty());
+    public void testDeleteCustomer() {
+        when(repository.findById(1L)).thenReturn(Mono.just(sampleEntity));
+        when(repository.delete(sampleEntity)).thenReturn(Mono.empty());
 
-        StepVerifier.create(customerService.deleteCustomer(1L))
+        StepVerifier.create(service.deleteCustomer(1L))
                 .verifyComplete();
+
+        verify(kafkaProducer, times(1)).send(eq(KafkaConfig.CUSTOMER_TOPIC), contains("deleted"));
     }
 }
