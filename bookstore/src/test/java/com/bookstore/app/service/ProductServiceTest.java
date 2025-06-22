@@ -5,6 +5,8 @@ import com.bookstore.app.dto.ProductDTO;
 import com.bookstore.app.entity.Product;
 import com.bookstore.app.event.KafkaProducer;
 import com.bookstore.app.repository.ProductRepository;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +28,12 @@ class ProductServiceTest {
 
     @Mock
     private KafkaProducer kafkaProducer;
+
+    @Mock
+    private HazelcastInstance hazelcastInstance;
+
+    @Mock
+    private IMap<Object, Object> cache;
 
     @InjectMocks
     private ProductService service;
@@ -54,7 +62,8 @@ class ProductServiceTest {
         sampleDTO.setBookCategory("Fiction");
         sampleDTO.setBookDesc("Sample book");
         sampleDTO.setBookImg("img.jpg");
-        
+
+        when(hazelcastInstance.getMap("products")).thenReturn(cache);
     }
 
     @Test

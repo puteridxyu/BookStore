@@ -5,6 +5,8 @@ import com.bookstore.app.dto.CustomerDTO;
 import com.bookstore.app.entity.Customer;
 import com.bookstore.app.event.KafkaProducer;
 import com.bookstore.app.repository.CustomerRepository;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,12 @@ public class CustomerServiceTest {
     @Mock
     private KafkaProducer kafkaProducer;
 
+    @Mock
+    private HazelcastInstance hazelcastInstance;
+
+    @Mock
+    private IMap<Object, Object> cache;
+
     @InjectMocks
     private CustomerService service;
 
@@ -47,6 +55,7 @@ public class CustomerServiceTest {
         sampleDTO.setFirstName("Puteri");
         sampleDTO.setLastName("Aisyah");
 
+        when(hazelcastInstance.getMap("customers")).thenReturn(cache);
     }
 
     @Test

@@ -5,6 +5,8 @@ import com.bookstore.app.dto.FamilyMemberDTO;
 import com.bookstore.app.entity.FamilyMember;
 import com.bookstore.app.event.KafkaProducer;
 import com.bookstore.app.repository.FamilyMemberRepository;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,18 @@ class FamilyMemberServiceTest {
     @Mock
     private KafkaProducer kafkaProducer;
 
+    @Mock
+    private HazelcastInstance hazelcastInstance;
+
+    @Mock
+    private IMap<Object, Object> cache;
+    
+    @Mock
+    private IMap<Object, Object> idMap;
+
+    @Mock
+    private IMap<Object, Object> customerMap;
+
     @InjectMocks
     private FamilyMemberService service;
 
@@ -46,8 +60,11 @@ class FamilyMemberServiceTest {
         sampleDTO.setFamilyId(1L);
         sampleDTO.setCustomerId(1L);
         sampleDTO.setName("Aisyah");
-        
+
+        when(hazelcastInstance.getMap("family-members")).thenReturn(idMap); 
+        when(hazelcastInstance.getMap("family-members-by-customer")).thenReturn(customerMap);
     }
+
 
     @Test
     void testGetAllFamilyMemberByCustomerId() {
