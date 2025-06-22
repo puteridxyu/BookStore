@@ -1,5 +1,5 @@
 # BookStore
-
+<details> <summary><strong>📁 BookStore Directory Structure</strong></summary>
 BookStore/
 ├── .github/               # GitHub Actions CI/CD workflows
 ├── bookstore/             # Main Spring Boot application
@@ -9,3 +9,5 @@ BookStore/
 │   └── pom.xml            # Maven build configuration
 ├── docker-compose.yml     # Docker config for DB + Spring Boot app
 └── README.md              # Project documentation
+
+</details>
