@@ -10,6 +10,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      docker:
+        image: docker:24.0.5
+        options: --privileged
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -20,6 +25,24 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Set up Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Start Dependencies with Docker Compose
+        working-directory: ./bookstore
+        run: docker-compose up -d
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to be ready..."
+          sleep 20
+          docker ps
+          docker logs hazelcast || true
+          docker logs kafka || true
+          docker logs bookstore-db || true
+
       - name: Build with Maven
         working-directory: ./bookstore
         run: mvn clean install -DskipTests=false
@@ -27,3 +50,8 @@ jobs:
       - name: Run Unit Tests
         working-directory: ./bookstore
         run: mvn test
+
+      - name: Stop Containers
+        if: always()
+        working-directory: ./bookstore
+        run: docker-compose down

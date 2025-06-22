@@ -5,16 +5,17 @@ import com.bookstore.app.dto.CustomerDTO;
 import com.bookstore.app.entity.Customer;
 import com.bookstore.app.event.KafkaProducer;
 import com.bookstore.app.repository.CustomerRepository;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -23,27 +24,39 @@ public class CustomerService {
 
     private final CustomerRepository repository;
     private final KafkaProducer kafkaProducer;
-    
+    private final HazelcastInstance hazelcastInstance;
+
+    private static final String CACHE_NAME = "customers";
+
     public Flux<CustomerDTO> getAllCustomers() {
         log.info("Fetching all customers from DB");
         return repository.findAll().map(this::toDTO);
     }
 
-    @Cacheable(cacheNames = "customers", key = "#id")
     public Mono<CustomerDTO> getCustomerById(Long id) {
-        log.info("Fetching customer with ID: {} from DB", id);
-        return repository.findById(id).map(this::toDTO);
+        IMap<Long, CustomerDTO> cache = hazelcastInstance.getMap(CACHE_NAME);
+        CustomerDTO cached = cache.get(id);
+        if (cached != null) {
+            log.info("Cache hit for customer ID: {}", id);
+            return Mono.just(cached);
+        }
+
+        log.info("Cache miss. Fetching customer with ID: {} from DB", id);
+        return repository.findById(id)
+                .map(this::toDTO)
+                .doOnNext(dto -> cache.put(dto.getCustomerId(), dto, 5, TimeUnit.MINUTES));
     }
 
-    @CacheEvict(cacheNames = "customers", key = "#result.customerId", condition = "#result != null")
     public Mono<CustomerDTO> createCustomer(CustomerDTO dto) {
         Customer entity = toEntity(dto);
         return repository.save(entity)
-        		.map(this::toDTO)
-                .doOnSuccess(saved -> sendKafkaEvent("created", saved));
+                .map(this::toDTO)
+                .doOnSuccess(saved -> {
+                    hazelcastInstance.getMap(CACHE_NAME).put(saved.getCustomerId(), saved, 5, TimeUnit.MINUTES);
+                    sendKafkaEvent("created", saved);
+                });
     }
 
-    @CacheEvict(cacheNames = "customers", key = "#id")
     public Mono<CustomerDTO> updateCustomer(Long id, CustomerDTO dto) {
         return repository.findById(id)
                 .flatMap(existing -> {
@@ -55,10 +68,12 @@ public class CustomerService {
                     return repository.save(existing);
                 })
                 .map(this::toDTO)
-                .doOnSuccess(updated -> sendKafkaEvent("updated", updated));
+                .doOnSuccess(updated -> {
+                    hazelcastInstance.getMap(CACHE_NAME).put(updated.getCustomerId(), updated, 5, TimeUnit.MINUTES);
+                    sendKafkaEvent("updated", updated);
+                });
     }
 
-    @CacheEvict(cacheNames = "customers", key = "#id")
     public Mono<CustomerDTO> updateCustomerName(Long id, CustomerDTO dto) {
         return repository.findById(id)
                 .flatMap(existing -> {
@@ -67,16 +82,20 @@ public class CustomerService {
                     return repository.save(existing);
                 })
                 .map(this::toDTO)
-                .doOnSuccess(updated -> sendKafkaEvent("customer-updated", updated));
+                .doOnSuccess(updated -> {
+                    hazelcastInstance.getMap(CACHE_NAME).put(updated.getCustomerId(), updated, 5, TimeUnit.MINUTES);
+                    sendKafkaEvent("customer-updated", updated);
+                });
     }
 
-    @CacheEvict(cacheNames = "customers", key = "#id")
     public Mono<Void> deleteCustomer(Long id) {
-    	return repository.findById(id)
-                .flatMap(existing ->
-                	repository.delete(existing)
-                        .doOnSuccess(v -> sendKafkaEvent("deleted", toDTO(existing)))
-                );
+        IMap<Long, CustomerDTO> cache = hazelcastInstance.getMap(CACHE_NAME);
+        return repository.findById(id)
+                .flatMap(existing -> repository.delete(existing)
+                        .doOnSuccess(v -> {
+                            cache.delete(id);
+                            sendKafkaEvent("deleted", toDTO(existing));
+                        }));
     }
 
     private void sendKafkaEvent(String action, CustomerDTO dto) {
@@ -91,7 +110,7 @@ public class CustomerService {
         kafkaProducer.send(KafkaConfig.CUSTOMER_TOPIC, message);
         log.info("Kafka event sent: {}", message);
     }
-    
+
     private CustomerDTO toDTO(Customer customer) {
         CustomerDTO dto = new CustomerDTO();
         dto.setCustomerId(customer.getCustomerId());

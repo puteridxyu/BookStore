@@ -4,8 +4,6 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spring.cache.HazelcastCacheManager;
-import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,13 +16,7 @@ public class HazelcastConfig {
         config.setClusterName("bookstore-cluster");
 
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
-        networkConfig.addAddress("localhost:5701"); // matches your exposed port
-
+        networkConfig.addAddress("localhost:5701");  
         return HazelcastClient.newHazelcastClient(config);
-    }
-
-    @Bean
-    public CacheManager cacheManager(HazelcastInstance hazelcastInstance) {
-        return new HazelcastCacheManager(hazelcastInstance);
     }
 }
