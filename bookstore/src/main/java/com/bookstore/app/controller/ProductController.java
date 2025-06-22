@@ -46,10 +46,10 @@ public class ProductController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/{id}")
-    public Mono<ResponseEntity<ProductDTO>> patchProduct(@PathVariable Long id, @RequestBody ProductDTO dto) {
-        log.info("Patching product with id {}: {}", id, dto);
-        return productService.partialUpdateProduct(id, dto)
+    @PatchMapping("/{id}/quantity")
+    public Mono<ResponseEntity<ProductDTO>> patchProductQuantity(@PathVariable Long id, @RequestBody ProductDTO dto) {
+        log.info("Patching quantity for product id {}: {}", id, dto);
+        return productService.updateProductQuantity(id, dto)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }

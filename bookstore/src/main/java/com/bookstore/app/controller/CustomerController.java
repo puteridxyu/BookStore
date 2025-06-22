@@ -51,7 +51,7 @@ public class CustomerController {
             @PathVariable Long id,
             @RequestBody CustomerDTO customerDTO) {
         log.info("Patching name for customer id {}: {}", id, customerDTO);
-        return customerService.UpdateCustomerName(id, customerDTO)  
+        return customerService.updateCustomerName(id, customerDTO)  
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
