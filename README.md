@@ -2,7 +2,7 @@
 
 <details>
   <summary><strong>📁 BookStore Directory Structure</strong></summary>
-
+<br>
   BookStore/<br>
   ├── .github/               # GitHub Actions CI/CD workflows<br>
   ├── bookstore/             # Main Spring Boot application<br>
